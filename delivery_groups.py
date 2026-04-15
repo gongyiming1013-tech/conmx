@@ -36,3 +36,21 @@ def max_groups(n: int, pairs: list[tuple[int, int]]) -> tuple[int, list[list[int
 
     group_list = list(groups.values())
     return len(group_list), group_list
+
+def min_trucks(weights: list[int], group_list: list[list[int]], capacity: int) -> int:
+    """Return the minimum number of trucks that can be used to deliver all packages given the constraints.
+
+    Raises ValueError on invalid input (capacity <= 0, negative weights, weight list length not match number of package).
+    """
+    if capacity <= 0:
+        raise ValueError("capacity must be a positive integer")
+    if any(w < 0 for w in weights):
+        raise ValueError("weights must be non-negative integers")
+    if len(weights) != sum(len(group) for group in group_list):
+        raise ValueError("weight list length does not match the number of packages")
+
+    for group in group_list:
+        group_weight = sum(weights[i] for i in group)
+        if group_weight > capacity:
+            return -1  # Cannot deliver this group
+    return len(group_list)  # Each group can be delivered in one truck
