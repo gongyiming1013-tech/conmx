@@ -131,17 +131,72 @@ Output (group_count, groups)
 
 ---
 
-### V1 (Planned)
+### V1 — OOD Refactor with Optimized Union-Find
 
-**Goal:** Add path compression, union by rank, and potentially OOD refactor.
+**Goal:** Refactor the functional Union-Find into an object-oriented design with path compression and union by rank, separating data structure logic from domain logic via composition.
 
-**Strategy Comparison:** TBD
+**Architecture:**
 
-**Design Discussion:** Should we introduce a `UnionFind` class? Add support for arbitrary package IDs (not just 1..n)?
+```
+Input (n, pairs)
+    │
+    ▼
+DeliveryGrouper(n, pairs)
+    ├── _validate(n, pairs)              # guard clauses at construction
+    ├── _uf: UnionFind                   # composition
+    │       ├── find(x) -> int           # path compression
+    │       ├── union(x, y) -> bool      # union by rank
+    │       ├── connected(x, y) -> bool  # membership query
+    │       ├── get_groups() -> list      # collect components
+    │       └── component_count -> int   # property
+    ├── max_groups() -> (int, list)
+    └── min_trucks(weights, capacity) -> int
+    │
+    ▼
+Output (group_count, groups)
+```
 
-**Class & Data Structure Changes:** TBD
+**Design Patterns:**
 
-**Test Plan:** TBD
+| Pattern | Where | Why |
+|---------|-------|-----|
+| Composition | `DeliveryGrouper` owns a `UnionFind` instance | SRP — separates generic disjoint-set logic from domain-specific validation and grouping |
+
+**Strategy Comparison:**
+
+| Approach | Pros | Cons | Verdict |
+|----------|------|------|---------|
+| Single `UnionFind` class handling everything | Fewer files, simple | Violates SRP — mixes data structure with domain validation/logic | Rejected |
+| `UnionFind` + `DeliveryGrouper` (composition) | Clean separation, `UnionFind` is reusable, each class has one job | Two classes | **Selected** |
+| Strategy pattern with swappable algorithms (UF/DFS/BFS) | Maximum flexibility, hot-swap algorithms | Over-engineered for current requirements; V0A/V0B already serve as standalone alternatives | Deferred to V2 |
+
+**Class & Data Structure Reference:**
+
+| Class | Member | Signature | Description | Thread-safe |
+|-------|--------|-----------|-------------|-------------|
+| `UnionFind` | `__init__` | `(n: int)` | Initialize `_parent: list[int]` (self-referencing) and `_rank: list[int]` (zeros) for `n` elements | N/A |
+| | `find` | `(x: int) -> int` | Return root of `x` with **path compression** (all nodes on path point directly to root) | No |
+| | `union` | `(x: int, y: int) -> bool` | Merge sets of `x` and `y` by **rank**; return `True` if a merge occurred, `False` if already connected | No |
+| | `connected` | `(x: int, y: int) -> bool` | Return whether `x` and `y` share the same root | No |
+| | `get_groups` | `() -> list[list[int]]` | Return all connected components as sorted lists | No |
+| | `component_count` | `@property -> int` | Number of distinct components (count unique roots) | No |
+| `DeliveryGrouper` | `__init__` | `(n: int, pairs: list[tuple[int, int]])` | Validate input, build `UnionFind`, process all pairs. Raises `ValueError` on invalid input | N/A |
+| | `max_groups` | `() -> tuple[int, list[list[int]]]` | Return `(count, groups)` delegating to `_uf.get_groups()` | No |
+| | `min_trucks` | `(weights: list[int], capacity: int) -> int` | Return minimum trucks needed or `-1` if any group exceeds capacity. Raises `ValueError` on invalid weights/capacity | No |
+
+**Test Plan:**
+
+| Dimension | What it covers | Key scenarios |
+|-----------|---------------|---------------|
+| UnionFind — core ops | `find`, `union`, `connected` | Basic merge, self-union (no-op), reflexive connected, transitive merge |
+| UnionFind — path compression | Tree flattening after `find` | After deep chain, verify `_parent[x] == root` for all nodes on path |
+| UnionFind — union by rank | Rank-based attachment | Equal-rank merge increments rank; unequal-rank keeps higher root |
+| UnionFind — components | `get_groups`, `component_count` | All singletons, one big group, mixed |
+| UnionFind — edge cases | Boundary conditions | n=1 singleton, n=0 (empty), large n with no unions |
+| DeliveryGrouper — core | `max_groups` behavior | Given example, no constraints, all connected (same expected output as V0) |
+| DeliveryGrouper — edge cases | Boundary conditions | n=0, n=1, single pair |
+| DeliveryGrouper — validation | Illegal inputs | n=0 with pairs, out-of-range IDs, negative IDs |
+| DeliveryGrouper — min_trucks | Truck capacity logic | Same scenarios as V0 bonus: exact capacity, overweight, zero/negative capacity, negative weights, length mismatch |
 
 ---
 
@@ -177,10 +232,32 @@ Output (group_count, groups)
 - [x] Create `test_delivery_groups_bfs.py` with all test cases
 - [x] Verify all tests pass and coverage ≥ 95% (achieved 100%)
 
-### V1 — Optimization & OOD Refactor (Planned)
+### V1 — OOD Refactor with Optimized Union-Find
 
-**Scope:** Introduce path compression and union by rank for performance. Potentially refactor into a `UnionFind` class following OOD principles.
+**Scope:** Refactor the V0 functional implementation into two classes following OOD principles. `UnionFind` is a general-purpose disjoint-set data structure with path compression and union by rank (near-constant amortized time). `DeliveryGrouper` composes `UnionFind` and encapsulates domain-specific input validation, grouping, and truck capacity logic. This separation makes `UnionFind` independently reusable and keeps each class focused on a single responsibility.
 
-- [ ] Design discussion and strategy comparison
-- [ ] Implementation
-- [ ] Test updates
+- [ ] Create `union_find.py` with `UnionFind` class
+  - [ ] `__init__(n)` — initialize `_parent` and `_rank` arrays
+  - [ ] `find(x)` — iterative root lookup with path compression
+  - [ ] `union(x, y)` — merge by rank, return `bool`
+  - [ ] `connected(x, y)` — same-root check
+  - [ ] `get_groups()` — collect all components as sorted lists
+  - [ ] `component_count` property — count distinct roots
+- [ ] Create `delivery_grouper.py` with `DeliveryGrouper` class
+  - [ ] `__init__(n, pairs)` — validate input and build internal `UnionFind`
+  - [ ] `max_groups()` — return `(count, groups)`
+  - [ ] `min_trucks(weights, capacity)` — return min trucks or `-1`
+- [ ] Create `test_union_find.py` with `UnionFind` unit tests
+  - [ ] Core operations (find, union, connected)
+  - [ ] Path compression verification
+  - [ ] Union by rank verification
+  - [ ] Components (get_groups, component_count)
+  - [ ] Edge cases (n=1, n=0, no unions)
+- [ ] Create `test_delivery_grouper.py` with `DeliveryGrouper` tests
+  - [ ] Core functionality (given example, no constraints, all connected)
+  - [ ] Edge cases (n=0, n=1, single pair)
+  - [ ] Duplicate pairs
+  - [ ] Transitivity (chain, bridge merge)
+  - [ ] Input validation errors
+  - [ ] min_trucks (all existing V0 scenarios)
+- [ ] Verify all tests pass and coverage ≥ 95%
