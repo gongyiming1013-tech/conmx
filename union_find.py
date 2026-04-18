@@ -14,7 +14,9 @@ class UnionFind:
         Args:
             n: Number of elements.
         """
-        raise NotImplementedError
+        self._parent: list[int] = list(range(n))
+        self._rank: list[int] = [0] * n
+        self._count: int = n
 
     def find(self, x: int) -> int:
         """Return the root of x with path compression.
@@ -27,7 +29,16 @@ class UnionFind:
         Returns:
             Root representative of the set containing x.
         """
-        raise NotImplementedError
+        # Iterative two-pass: first locate root, then flatten path.
+        root = x
+        while self._parent[root] != root:
+            root = self._parent[root]
+        node = x
+        while self._parent[node] != root:
+            nxt = self._parent[node]
+            self._parent[node] = root
+            node = nxt
+        return root
 
     def union(self, x: int, y: int) -> bool:
         """Merge the sets containing x and y using union by rank.
@@ -39,7 +50,21 @@ class UnionFind:
         Returns:
             True if a merge occurred, False if x and y were already connected.
         """
-        raise NotImplementedError
+        root_x = self.find(x)
+        root_y = self.find(y)
+        if root_x == root_y:
+            return False
+        rank_x = self._rank[root_x]
+        rank_y = self._rank[root_y]
+        if rank_x < rank_y:
+            self._parent[root_x] = root_y
+        elif rank_x > rank_y:
+            self._parent[root_y] = root_x
+        else:
+            self._parent[root_y] = root_x
+            self._rank[root_x] = rank_x + 1
+        self._count -= 1
+        return True
 
     def connected(self, x: int, y: int) -> bool:
         """Return whether x and y belong to the same set.
@@ -51,7 +76,7 @@ class UnionFind:
         Returns:
             True if x and y share the same root.
         """
-        raise NotImplementedError
+        return self.find(x) == self.find(y)
 
     def get_groups(self) -> list[list[int]]:
         """Return all connected components as sorted lists.
@@ -59,9 +84,13 @@ class UnionFind:
         Returns:
             List of groups, each group is a sorted list of element IDs.
         """
-        raise NotImplementedError
+        buckets: dict[int, list[int]] = {}
+        for i in range(len(self._parent)):
+            root = self.find(i)
+            buckets.setdefault(root, []).append(i)
+        return [sorted(g) for g in buckets.values()]
 
     @property
     def component_count(self) -> int:
         """Return the number of distinct components."""
-        raise NotImplementedError
+        return self._count

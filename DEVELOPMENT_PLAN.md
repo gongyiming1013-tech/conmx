@@ -236,28 +236,28 @@ Output (group_count, groups)
 
 **Scope:** Refactor the V0 functional implementation into two classes following OOD principles. `UnionFind` is a general-purpose disjoint-set data structure with path compression and union by rank (near-constant amortized time). `DeliveryGrouper` composes `UnionFind` and encapsulates domain-specific input validation, grouping, and truck capacity logic. This separation makes `UnionFind` independently reusable and keeps each class focused on a single responsibility.
 
-- [ ] Create `union_find.py` with `UnionFind` class
-  - [ ] `__init__(n)` — initialize `_parent` and `_rank` arrays
-  - [ ] `find(x)` — iterative root lookup with path compression
-  - [ ] `union(x, y)` — merge by rank, return `bool`
-  - [ ] `connected(x, y)` — same-root check
-  - [ ] `get_groups()` — collect all components as sorted lists
-  - [ ] `component_count` property — count distinct roots
-- [ ] Create `delivery_grouper.py` with `DeliveryGrouper` class
-  - [ ] `__init__(n, pairs)` — validate input and build internal `UnionFind`
-  - [ ] `max_groups()` — return `(count, groups)`
-  - [ ] `min_trucks(weights, capacity)` — return min trucks or `-1`
-- [ ] Create `test_union_find.py` with `UnionFind` unit tests
-  - [ ] Core operations (find, union, connected)
-  - [ ] Path compression verification
-  - [ ] Union by rank verification
-  - [ ] Components (get_groups, component_count)
-  - [ ] Edge cases (n=1, n=0, no unions)
-- [ ] Create `test_delivery_grouper.py` with `DeliveryGrouper` tests
-  - [ ] Core functionality (given example, no constraints, all connected)
-  - [ ] Edge cases (n=0, n=1, single pair)
-  - [ ] Duplicate pairs
-  - [ ] Transitivity (chain, bridge merge)
-  - [ ] Input validation errors
-  - [ ] min_trucks (all existing V0 scenarios)
-- [ ] Verify all tests pass and coverage ≥ 95%
+- [x] Create `union_find.py` with `UnionFind` class
+  - [x] `__init__(n)` — initialize `_parent` and `_rank` arrays
+  - [x] `find(x)` — iterative root lookup with path compression
+  - [x] `union(x, y)` — merge by rank, return `bool`
+  - [x] `connected(x, y)` — same-root check
+  - [x] `get_groups()` — collect all components as sorted lists
+  - [x] `component_count` property — count distinct roots
+- [x] Create `delivery_grouper.py` with `DeliveryGrouper` class
+  - [x] `__init__(n, pairs)` — validate input and build internal `UnionFind`
+  - [x] `max_groups()` — return `(count, groups)`
+  - [x] `min_trucks(weights, capacity)` — return min trucks or `-1`
+- [x] Create `test_union_find.py` with `UnionFind` unit tests
+  - [x] Core operations (find, union, connected)
+  - [x] Path compression verification
+  - [x] Union by rank verification
+  - [x] Components (get_groups, component_count)
+  - [x] Edge cases (n=1, n=0, no unions)
+- [x] Create `test_delivery_grouper.py` with `DeliveryGrouper` tests
+  - [x] Core functionality (given example, no constraints, all connected)
+  - [x] Edge cases (n=0, n=1, single pair)
+  - [x] Duplicate pairs
+  - [x] Transitivity (chain, bridge merge)
+  - [x] Input validation errors
+  - [x] min_trucks (all existing V0 scenarios)
+- [x] Verify all tests pass and coverage ≥ 95% (achieved 100%)
