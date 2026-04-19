@@ -84,3 +84,28 @@ def test_pair_partially_out_of_range():
 def test_negative_id():
     with pytest.raises(ValueError):
         max_groups_dfs(3, [(0, -1)])
+
+
+# ---------- V1.1 additions ----------
+
+def test_negative_n_raises():
+    """n<0 must raise ValueError explicitly."""
+    with pytest.raises(ValueError):
+        max_groups_dfs(-1, [])
+
+
+def test_self_loop_pair_is_accepted():
+    """(a, a) self-loop is allowed and does not change the grouping."""
+    count, groups = max_groups_dfs(3, [(2, 2)])
+    assert count == 3
+    assert sorted(sorted(g) for g in groups) == [[0], [1], [2]]
+
+
+def test_dfs_handles_long_chain_without_recursion_error():
+    """A chain of length 2000 must not hit Python's default recursion limit."""
+    n = 2000
+    pairs = [(i, i + 1) for i in range(n - 1)]
+    count, groups = max_groups_dfs(n, pairs)
+    assert count == 1
+    assert len(groups[0]) == n
+    assert sorted(groups[0]) == list(range(n))

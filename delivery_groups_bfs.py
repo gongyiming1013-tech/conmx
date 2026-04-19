@@ -1,3 +1,9 @@
+"""V0B BFS-based connected components for delivery grouping.
+
+Uses a deque for iterative breadth-first traversal. Group-internal order is
+**undefined**.
+"""
+
 from collections import deque
 
 
@@ -28,8 +34,13 @@ def bfs(graph: list[list[int]], start: int, visited: list[bool]) -> list[int]:
 def max_groups_bfs(n: int, pairs: list[tuple[int, int]]) -> tuple[int, list[list[int]]]:
     """Return (group_count, groups) using BFS to find connected components.
 
-    Raises ValueError on invalid input (out-of-range IDs, n=0 with pairs).
+    Group-internal order is undefined. Self-loop pairs ``(a, a)`` are accepted
+    and do not change the grouping.
+
+    Raises ValueError on invalid input (n<0, out-of-range IDs, n=0 with pairs).
     """
+    if n < 0:
+        raise ValueError(f"n must be non-negative, got {n}")
     if n == 0:
         if pairs:
             raise ValueError("n is 0 but pairs were provided")

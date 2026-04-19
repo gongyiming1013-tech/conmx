@@ -200,6 +200,57 @@ Output (group_count, groups)
 
 ---
 
+### V1.1 — Quality Hardening (from code & security review)
+
+**Goal:** Close HIGH-severity defects and test blind spots uncovered by the code-reviewer and security-reviewer passes. No public API changes, no cross-file refactors; V0/V0A/V0B/V1 remain available.
+
+**Scope Boundary:**
+
+- No new public functions or classes
+- No change to existing public signatures
+- Fixes are local to each affected file
+
+**Changes Summary:**
+
+| File | Change | Source finding |
+|------|--------|----------------|
+| `delivery_groups.py` | `min_trucks` adds structural validation for `group_list`; `max_groups` adds `n < 0` guard; module docstring | HIGH-1, MED-3, LOW-2 |
+| `delivery_groups_dfs.py` | `dfs` rewritten as explicit-stack iteration; `max_groups_dfs` adds `n < 0` guard; module docstring | HIGH-2 / M-1, MED-3 |
+| `delivery_groups_bfs.py` | `max_groups_bfs` adds `n < 0` guard; module docstring | MED-3 |
+| `delivery_grouper.py` | `__init__` adds `n < 0` guard | MED-3 / I-1 |
+| `union_find.py` | Class docstring states `get_groups` returns ascending-ordered inner groups | MED-7 |
+| V0 / V0A / V0B docstrings | Declare group-internal order **undefined** | MED-7 |
+
+**Contract Decisions:**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Group-internal order (V0/V0A/V0B) | **Undefined** | Zero runtime cost; tests already normalize via `sorted()`; preserves algorithmic purity |
+| Group-internal order (V1 `UnionFind.get_groups`) | **Ascending** | Existing behavior; documented explicitly |
+| Self-loop pair `(a, a)` | **Allowed**, does not affect result | All current implementations handle it naturally; locked in by equivalence test |
+
+**Test Plan:**
+
+| Dimension | What it covers | Key scenarios |
+|-----------|---------------|---------------|
+| `min_trucks` structural validation | `group_list` well-formedness | Out-of-range ID, duplicate ID across groups, empty sub-group, negative ID |
+| DFS recursion depth | Iterative traversal correctness on deep chains | `n=2000` chain input — no `RecursionError`, returns single component of size 2000 |
+| Negative `n` guard | All four entry points | `max_groups(-1, [])`, `max_groups_bfs(-1, [])`, `max_groups_dfs(-1, [])`, `DeliveryGrouper(-1, [])` all raise `ValueError` |
+| Cross-algorithm equivalence | V0/V0A/V0B/V1 agree on all inputs | Parametrized over: empty, singleton, all-isolated, full chain, disjoint pairs, duplicates, self-loop, out-of-order pairs |
+| Group-order contract | Lock documented behavior | V1 `get_groups` returns each group ascending; V0 variants tested via set-equivalence only |
+
+**Deferred to later versions (from review, intentionally out of scope for V1.1):**
+
+| Item | Reason for deferral |
+|------|---------------------|
+| Extract shared `_validate_pairs` / `_build_graph` util (MED-2) | Cross-file refactor; separate version |
+| Remove redundant `sorted()` in `UnionFind.get_groups` (MED-4) | Would break current ascending-order contract |
+| `cached_property` for `DeliveryGrouper.groups` (MED-8) | Non-functional optimization |
+| `requirements.txt` / lockfile (L-2) | Infrastructure layer; independent branch |
+| PEP 8 spacing, `_` prefix on helpers, test renaming (LOW-1/8, LOW-7) | Style sweep via `code-simplifier` |
+
+---
+
 ## Roadmap & Implementation
 
 ### V0 — Simple Functional Implementation
@@ -261,3 +312,33 @@ Output (group_count, groups)
   - [x] Input validation errors
   - [x] min_trucks (all existing V0 scenarios)
 - [x] Verify all tests pass and coverage ≥ 95% (achieved 100%)
+
+### V1.1 — Quality Hardening (from code & security review)
+
+**Scope:** Close HIGH-severity defects and test blind spots identified by the code-reviewer + security-reviewer pass. Purely additive validation + one DFS rewrite. No new public API, no cross-file refactors, no changes to V0/V0A/V0B/V1 public signatures.
+
+- [x] `delivery_groups.py`
+  - [x] Add module-level docstring
+  - [x] Add `n < 0` guard in `max_groups`
+  - [x] Add structural validation in `min_trucks` (IDs in `[0, len(weights))`, no cross-group duplicates, no empty sub-groups); reorder guards to top
+  - [x] Update docstrings: state group-internal order is undefined
+- [x] `delivery_groups_dfs.py`
+  - [x] Add module-level docstring
+  - [x] Rewrite `dfs` as explicit-stack iterative traversal (same signature)
+  - [x] Add `n < 0` guard in `max_groups_dfs`
+  - [x] Update docstring: state group-internal order is undefined
+- [x] `delivery_groups_bfs.py`
+  - [x] Add module-level docstring
+  - [x] Add `n < 0` guard in `max_groups_bfs`
+  - [x] Update docstring: state group-internal order is undefined
+- [x] `delivery_grouper.py`
+  - [x] Add `n < 0` guard in `__init__`
+- [x] `union_find.py`
+  - [x] Document ascending-order contract for `get_groups` in class docstring
+- [x] Tests
+  - [x] `test_delivery_groups.py`: add `test_min_trucks_rejects_out_of_range_id`, `test_min_trucks_rejects_duplicate_id_across_groups`, `test_min_trucks_rejects_empty_subgroup`, `test_min_trucks_rejects_negative_id`, `test_min_trucks_rejects_weights_longer_than_total`, `test_negative_n_raises`
+  - [x] `test_delivery_groups_dfs.py`: add `test_dfs_handles_long_chain_without_recursion_error`, `test_negative_n_raises`, `test_self_loop_pair_is_accepted`
+  - [x] `test_delivery_groups_bfs.py`: add `test_negative_n_raises`, `test_self_loop_pair_is_accepted`
+  - [x] `test_delivery_grouper.py`: add `test_negative_n_raises`, `test_self_loop_pair_is_accepted`
+  - [x] Create `test_algorithm_equivalence.py` with parametrized cross-algorithm equivalence test
+- [x] Verify all tests pass and coverage ≥ 95% (achieved 100% branch coverage, 123/123 tests pass)

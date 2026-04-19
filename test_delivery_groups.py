@@ -193,3 +193,44 @@ def test_trucks_weight_length_mismatch():
     """weights length doesn't match total packages in groups."""
     with pytest.raises(ValueError):
         min_trucks([1], [[0, 1]], 10)
+
+
+# ---------- V1.1: negative n guard ----------
+
+def test_negative_n_raises():
+    """n<0 must raise ValueError (not propagate as IndexError)."""
+    with pytest.raises(ValueError):
+        max_groups(-1, [])
+
+
+# ---------- V1.1: min_trucks structural validation (HIGH-1) ----------
+
+def test_min_trucks_rejects_out_of_range_id():
+    """ID in group_list exceeds len(weights)-1 -> ValueError, not IndexError."""
+    with pytest.raises(ValueError):
+        min_trucks([1, 2, 3], [[0, 1, 99]], 10)
+
+
+def test_min_trucks_rejects_negative_id():
+    """Negative ID in group_list -> ValueError."""
+    with pytest.raises(ValueError):
+        min_trucks([1, 2], [[-1, 0]], 10)
+
+
+def test_min_trucks_rejects_duplicate_id_across_groups():
+    """Same ID appears in two groups -> ValueError."""
+    # weights length matches total count (2 + 2 = 4), so only the duplicate check can catch it.
+    with pytest.raises(ValueError):
+        min_trucks([1, 2, 3, 4], [[0, 1], [1, 2]], 10)
+
+
+def test_min_trucks_rejects_empty_subgroup():
+    """An empty sub-list in group_list -> ValueError."""
+    with pytest.raises(ValueError):
+        min_trucks([1, 2], [[0, 1], []], 10)
+
+
+def test_min_trucks_rejects_weights_longer_than_total():
+    """weights has more entries than total packages in group_list -> ValueError."""
+    with pytest.raises(ValueError):
+        min_trucks([1, 2, 3], [[0]], 10)

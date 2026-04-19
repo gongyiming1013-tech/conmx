@@ -23,9 +23,11 @@ class DeliveryGrouper:
                 delivered together. Constraints are transitive.
 
         Raises:
-            ValueError: If n=0 but pairs are provided, or if any package
-                ID is out of range [0, n-1].
+            ValueError: If n is negative, n=0 but pairs are provided, or if
+                any package ID is out of range [0, n-1].
         """
+        if n < 0:
+            raise ValueError(f"n must be non-negative, got {n}")
         if n == 0 and pairs:
             raise ValueError("n=0 but pairs were provided")
         for a, b in pairs:

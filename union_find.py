@@ -6,7 +6,16 @@ amortized time per operation.
 
 
 class UnionFind:
-    """Disjoint-set data structure with path compression and union by rank."""
+    """Disjoint-set data structure with path compression and union by rank.
+
+    Contract notes:
+        - ``get_groups`` returns each inner group as an **ascending-ordered**
+          list of element IDs. The outer list order is unspecified. This is
+          a stronger contract than the V0/V0A/V0B functional implementations,
+          which leave group-internal order undefined.
+        - Not thread-safe: ``find`` mutates internal ``_parent`` via path
+          compression, so even concurrent reads via ``get_groups`` are unsafe.
+    """
 
     def __init__(self, n: int) -> None:
         """Initialize n singleton sets (elements 0 to n-1).
