@@ -134,6 +134,26 @@ class TestInputValidation:
         with pytest.raises(ValueError):
             DeliveryGrouper(3, [(-1, 0)])
 
+    def test_negative_n_raises(self) -> None:
+        """n<0 must raise ValueError explicitly (V1.1)."""
+        with pytest.raises(ValueError):
+            DeliveryGrouper(-1, [])
+
+
+# ---------------------------------------------------------------------------
+# V1.1 — self-loop contract
+# ---------------------------------------------------------------------------
+
+class TestSelfLoop:
+    """Self-loop pair (a, a) is allowed and does not change grouping."""
+
+    def test_self_loop_pair_is_accepted(self) -> None:
+        """(2, 2) in a 3-package scenario yields 3 singleton groups."""
+        dg = DeliveryGrouper(3, [(2, 2)])
+        count, groups = dg.max_groups()
+        assert count == 3
+        assert sorted(sorted(g) for g in groups) == [[0], [1], [2]]
+
 
 # ---------------------------------------------------------------------------
 # min_trucks

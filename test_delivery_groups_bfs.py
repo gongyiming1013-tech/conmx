@@ -84,3 +84,18 @@ def test_pair_partially_out_of_range():
 def test_negative_id():
     with pytest.raises(ValueError):
         max_groups_bfs(3, [(0, -1)])
+
+
+# ---------- V1.1 additions ----------
+
+def test_negative_n_raises():
+    """n<0 must raise ValueError explicitly."""
+    with pytest.raises(ValueError):
+        max_groups_bfs(-1, [])
+
+
+def test_self_loop_pair_is_accepted():
+    """(a, a) self-loop is allowed and does not change the grouping."""
+    count, groups = max_groups_bfs(3, [(2, 2)])
+    assert count == 3
+    assert sorted(sorted(g) for g in groups) == [[0], [1], [2]]
